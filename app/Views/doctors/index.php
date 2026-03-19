@@ -4,29 +4,38 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
     $hash = abs(crc32($specialty));
     return 'specialty-tone-' . (($hash % $toneCount) + 1);
 };
+
+$flashMessage = '';
+$flashType = 'success';
+$flashIcon = 'bi-check-circle-fill';
+
+if (($status ?? '') === 'created') {
+    $flashMessage = 'Doctor agregado correctamente.';
+    $flashIcon = 'bi-check-circle-fill';
+} elseif (($status ?? '') === 'specialty_created') {
+    $flashMessage = 'Especialidad agregada correctamente.';
+    $flashIcon = 'bi-stars';
+} elseif (($status ?? '') === 'updated') {
+    $flashMessage = 'Doctor actualizado correctamente.';
+    $flashIcon = 'bi-pencil-square';
+} elseif (($status ?? '') === 'deleted') {
+    $flashMessage = 'Doctor eliminado correctamente.';
+    $flashIcon = 'bi-trash3-fill';
+} elseif (($error ?? '') !== '') {
+    $flashMessage = (string) $error;
+    $flashType = 'danger';
+    $flashIcon = 'bi-exclamation-triangle-fill';
+}
 ?>
 
-<?php if (($status ?? '') === 'created'): ?>
-    <div class="alert alert-success shadow-sm border-0 app-alert" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>Doctor agregado correctamente.
-    </div>
-<?php endif; ?>
-
-<?php if (($status ?? '') === 'specialty_created'): ?>
-    <div class="alert alert-success shadow-sm border-0 app-alert" role="alert">
-        <i class="bi bi-stars me-2"></i>Especialidad agregada correctamente.
-    </div>
-<?php endif; ?>
-
-<?php if (($status ?? '') === 'updated'): ?>
-    <div class="alert alert-success shadow-sm border-0 app-alert" role="alert">
-        <i class="bi bi-pencil-square me-2"></i>Doctor actualizado correctamente.
-    </div>
-<?php endif; ?>
-
-<?php if (($error ?? '') !== ''): ?>
-    <div class="alert alert-danger shadow-sm border-0 app-alert" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?>
+<?php if ($flashMessage !== ''): ?>
+    <div class="floating-flash floating-flash-<?= htmlspecialchars($flashType, ENT_QUOTES, 'UTF-8') ?>" id="floatingFlash" role="status" aria-live="polite">
+        <div class="floating-flash-icon"><i class="bi <?= htmlspecialchars($flashIcon, ENT_QUOTES, 'UTF-8') ?>"></i></div>
+        <div class="floating-flash-content">
+            <strong><?= $flashType === 'danger' ? 'Error' : 'Operacion completada' ?></strong>
+            <span><?= htmlspecialchars($flashMessage, ENT_QUOTES, 'UTF-8') ?></span>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-3" id="floatingFlashClose" aria-label="Cerrar"></button>
     </div>
 <?php endif; ?>
 
@@ -145,7 +154,7 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                 <h5 class="modal-title" id="addDoctorModalLabel"><i class="bi bi-person-vcard-fill me-2"></i>Agregar Doctor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form method="POST" action="<?= htmlspecialchars((string) ($baseUrl ?? ''), ENT_QUOTES, 'UTF-8') ?>" id="addDoctorForm">
+            <form method="POST" action="" id="addDoctorForm">
                 <div class="modal-body pt-3">
                     <input type="hidden" name="action" value="store">
                     <input type="hidden" name="id_especialidad" id="id_especialidad" value="">
@@ -163,6 +172,7 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                             type="text"
                             class="form-control"
                             id="especialidad_busqueda"
+                            name="especialidad_texto"
                             placeholder="Escribe para buscar especialidad..."
                             autocomplete="off"
                             required
@@ -191,9 +201,9 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                 <h5 class="modal-title" id="editDoctorModalLabel"><i class="bi bi-pencil-square me-2"></i>Editar Doctor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form method="POST" action="<?= htmlspecialchars((string) ($baseUrl ?? ''), ENT_QUOTES, 'UTF-8') ?>" id="editDoctorForm">
+            <form method="POST" action="" id="editDoctorForm">
                 <div class="modal-body pt-3">
-                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="action" value="update" id="edit_action">
                     <input type="hidden" name="doctor_id" id="edit_doctor_id" value="">
                     <input type="hidden" name="id_especialidad" id="edit_id_especialidad" value="">
 
@@ -211,6 +221,7 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                             type="text"
                             class="form-control"
                             id="edit_especialidad_busqueda"
+                            name="especialidad_texto"
                             placeholder="Escribe para buscar especialidad..."
                             autocomplete="off"
                             required
@@ -220,6 +231,9 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-danger me-auto" id="deleteDoctorBtn">
+                        <i class="bi bi-trash3-fill me-2"></i>Eliminar Doctor
+                    </button>
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle me-2"></i>Cancelar
                     </button>
@@ -239,7 +253,7 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
                 <h5 class="modal-title" id="addSpecialtyModalLabel"><i class="bi bi-tags-fill me-2"></i>Agregar Especialidad</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form method="POST" action="<?= htmlspecialchars((string) ($baseUrl ?? ''), ENT_QUOTES, 'UTF-8') ?>" id="addSpecialtyForm">
+            <form method="POST" action="" id="addSpecialtyForm">
                 <div class="modal-body pt-3">
                     <input type="hidden" name="action" value="store_specialty">
                     <label for="nombre_especialidad" class="form-label">Nombre de la especialidad</label>
@@ -280,16 +294,38 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
     const editDoctorIdInput = document.getElementById('edit_doctor_id');
     const editDoctorNameInput = document.getElementById('edit_nombre_completo');
     const editDoctorPhoneInput = document.getElementById('edit_telefono');
+    const editActionInput = document.getElementById('edit_action');
+    const deleteDoctorBtn = document.getElementById('deleteDoctorBtn');
     const editSpecialtyInput = document.getElementById('edit_especialidad_busqueda');
     const editSpecialtyIdInput = document.getElementById('edit_id_especialidad');
     const editSpecialtySuggestions = document.getElementById('editSpecialtySuggestions');
     const addSpecialtyForm = document.getElementById('addSpecialtyForm');
     const specialtyNameInput = document.getElementById('nombre_especialidad');
-    const baseUrl = <?= json_encode((string) ($baseUrl ?? ''), JSON_UNESCAPED_UNICODE) ?>;
+    const floatingFlash = document.getElementById('floatingFlash');
+    const floatingFlashClose = document.getElementById('floatingFlashClose');
+    const baseUrl = window.location.pathname || <?= json_encode((string) ($baseUrl ?? ''), JSON_UNESCAPED_UNICODE) ?>;
     const toneCount = 8;
 
-    if (!searchInput || !tableBody || !baseUrl || !resultCount || !clearSearchBtn || !specialtyInput || !specialtyIdInput || !specialtySuggestions || !addDoctorForm || !editDoctorForm || !editDoctorIdInput || !editDoctorNameInput || !editDoctorPhoneInput || !editSpecialtyInput || !editSpecialtyIdInput || !editSpecialtySuggestions || !addSpecialtyForm || !specialtyNameInput) {
+    if (!searchInput || !tableBody || !baseUrl || !resultCount || !clearSearchBtn || !specialtyInput || !specialtyIdInput || !specialtySuggestions || !addDoctorForm || !editDoctorForm || !editDoctorIdInput || !editDoctorNameInput || !editDoctorPhoneInput || !editActionInput || !deleteDoctorBtn || !editSpecialtyInput || !editSpecialtyIdInput || !editSpecialtySuggestions || !addSpecialtyForm || !specialtyNameInput) {
         return;
+    }
+
+    if (floatingFlash) {
+        const dismissFlash = () => {
+            floatingFlash.classList.add('hide');
+            setTimeout(() => {
+                floatingFlash.remove();
+            }, 280);
+        };
+
+        const flashTimeout = setTimeout(dismissFlash, 30000);
+
+        if (floatingFlashClose) {
+            floatingFlashClose.addEventListener('click', () => {
+                clearTimeout(flashTimeout);
+                dismissFlash();
+            });
+        }
     }
 
     const escapeHtml = (text) => {
@@ -493,6 +529,13 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
     });
 
     addDoctorForm.addEventListener('submit', (event) => {
+        if (specialtyIdInput.value.trim() === '' && specialtyInput.value.trim() !== '') {
+            const selectedOption = specialtySuggestions.querySelector('.specialty-option');
+            if (selectedOption) {
+                specialtyIdInput.value = selectedOption.getAttribute('data-id') ?? '';
+            }
+        }
+
         if (specialtyIdInput.value.trim() === '') {
             event.preventDefault();
             specialtyInput.focus();
@@ -504,6 +547,17 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
     });
 
     editDoctorForm.addEventListener('submit', (event) => {
+        if (editActionInput.value === 'delete') {
+            return;
+        }
+
+        if (editSpecialtyIdInput.value.trim() === '' && editSpecialtyInput.value.trim() !== '') {
+            const selectedOption = editSpecialtySuggestions.querySelector('.specialty-option');
+            if (selectedOption) {
+                editSpecialtyIdInput.value = selectedOption.getAttribute('data-id') ?? '';
+            }
+        }
+
         if (editSpecialtyIdInput.value.trim() === '') {
             event.preventDefault();
             editSpecialtyInput.focus();
@@ -529,7 +583,20 @@ $getToneClass = static function (string $specialty) use ($toneCount): string {
         editDoctorPhoneInput.value = button.dataset.doctorPhone ?? '';
         editSpecialtyInput.value = button.dataset.specialtyName ?? '';
         editSpecialtyIdInput.value = button.dataset.specialtyId ?? '';
+        editActionInput.value = 'update';
         editSpecialtyInput.classList.remove('is-invalid');
+    });
+
+    deleteDoctorBtn.addEventListener('click', () => {
+        const doctorName = editDoctorNameInput.value.trim();
+        const confirmed = window.confirm(`Deseas eliminar al doctor ${doctorName}? Esta accion no se puede deshacer.`);
+
+        if (!confirmed) {
+            return;
+        }
+
+        editActionInput.value = 'delete';
+        editDoctorForm.submit();
     });
 
     clearSearchBtn.addEventListener('click', () => {

@@ -93,6 +93,13 @@ class Doctor
         ]);
     }
 
+    public function delete(int $doctorId): bool
+    {
+        $statement = $this->connection->prepare('DELETE FROM doctores WHERE id = :id');
+
+        return $statement->execute(['id' => $doctorId]);
+    }
+
     public function doctorExists(int $doctorId): bool
     {
         $statement = $this->connection->prepare('SELECT 1 FROM doctores WHERE id = :id LIMIT 1');
@@ -122,5 +129,15 @@ class Doctor
         $statement = $this->connection->prepare('INSERT INTO especialidades (nombre) VALUES (:nombre)');
 
         return $statement->execute(['nombre' => $specialtyName]);
+    }
+
+    public function findSpecialtyIdByName(string $specialtyName): int
+    {
+        $statement = $this->connection->prepare('SELECT id FROM especialidades WHERE LOWER(nombre) = LOWER(:nombre) LIMIT 1');
+        $statement->execute(['nombre' => trim($specialtyName)]);
+
+        $result = $statement->fetchColumn();
+
+        return $result === false ? 0 : (int) $result;
     }
 }

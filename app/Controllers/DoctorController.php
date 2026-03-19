@@ -49,6 +49,11 @@ class DoctorController extends Controller
         $nombreCompleto = trim($_POST['nombre_completo'] ?? '');
         $telefono = trim($_POST['telefono'] ?? '');
         $specialtyId = (int) ($_POST['id_especialidad'] ?? 0);
+        $specialtyText = trim($_POST['especialidad_texto'] ?? '');
+
+        if ($specialtyId <= 0 && $specialtyText !== '') {
+            $specialtyId = $this->doctorModel->findSpecialtyIdByName($specialtyText);
+        }
 
         if ($nombreCompleto === '' || $telefono === '' || $specialtyId <= 0) {
             $this->redirectWithQuery(['error' => 'Todos los campos son obligatorios']);
@@ -60,8 +65,18 @@ class DoctorController extends Controller
             return;
         }
 
-        $this->doctorModel->create($nombreCompleto, $telefono, $specialtyId);
-        $this->redirectWithQuery(['status' => 'created']);
+        try {
+            $saved = $this->doctorModel->create($nombreCompleto, $telefono, $specialtyId);
+
+            if (!$saved) {
+                $this->redirectWithQuery(['error' => 'No se pudo guardar el doctor']);
+                return;
+            }
+
+            $this->redirectWithQuery(['status' => 'created']);
+        } catch (\Throwable $exception) {
+            $this->redirectWithQuery(['error' => 'Error al guardar doctor: ' . $exception->getMessage()]);
+        }
     }
 
     public function storeSpecialty(): void
@@ -78,8 +93,18 @@ class DoctorController extends Controller
             return;
         }
 
-        $this->doctorModel->createSpecialty($specialtyName);
-        $this->redirectWithQuery(['status' => 'specialty_created']);
+        try {
+            $saved = $this->doctorModel->createSpecialty($specialtyName);
+
+            if (!$saved) {
+                $this->redirectWithQuery(['error' => 'No se pudo guardar la especialidad']);
+                return;
+            }
+
+            $this->redirectWithQuery(['status' => 'specialty_created']);
+        } catch (\Throwable $exception) {
+            $this->redirectWithQuery(['error' => 'Error al guardar especialidad: ' . $exception->getMessage()]);
+        }
     }
 
     public function update(): void
@@ -88,6 +113,11 @@ class DoctorController extends Controller
         $nombreCompleto = trim($_POST['nombre_completo'] ?? '');
         $telefono = trim($_POST['telefono'] ?? '');
         $specialtyId = (int) ($_POST['id_especialidad'] ?? 0);
+        $specialtyText = trim($_POST['especialidad_texto'] ?? '');
+
+        if ($specialtyId <= 0 && $specialtyText !== '') {
+            $specialtyId = $this->doctorModel->findSpecialtyIdByName($specialtyText);
+        }
 
         if ($doctorId <= 0 || $nombreCompleto === '' || $telefono === '' || $specialtyId <= 0) {
             $this->redirectWithQuery(['error' => 'Datos invalidos para editar el doctor']);
@@ -104,8 +134,46 @@ class DoctorController extends Controller
             return;
         }
 
-        $this->doctorModel->update($doctorId, $nombreCompleto, $telefono, $specialtyId);
-        $this->redirectWithQuery(['status' => 'updated']);
+        try {
+            $saved = $this->doctorModel->update($doctorId, $nombreCompleto, $telefono, $specialtyId);
+
+            if (!$saved) {
+                $this->redirectWithQuery(['error' => 'No se pudo actualizar el doctor']);
+                return;
+            }
+
+            $this->redirectWithQuery(['status' => 'updated']);
+        } catch (\Throwable $exception) {
+            $this->redirectWithQuery(['error' => 'Error al actualizar doctor: ' . $exception->getMessage()]);
+        }
+    }
+
+    public function delete(): void
+    {
+        $doctorId = (int) ($_POST['doctor_id'] ?? 0);
+
+        if ($doctorId <= 0) {
+            $this->redirectWithQuery(['error' => 'Doctor invalido para eliminar']);
+            return;
+        }
+
+        if (!$this->doctorModel->doctorExists($doctorId)) {
+            $this->redirectWithQuery(['error' => 'El doctor seleccionado no existe']);
+            return;
+        }
+
+        try {
+            $deleted = $this->doctorModel->delete($doctorId);
+
+            if (!$deleted) {
+                $this->redirectWithQuery(['error' => 'No se pudo eliminar el doctor']);
+                return;
+            }
+
+            $this->redirectWithQuery(['status' => 'deleted']);
+        } catch (\Throwable $exception) {
+            $this->redirectWithQuery(['error' => 'Error al eliminar doctor: ' . $exception->getMessage()]);
+        }
     }
 
     private function searchJson(string $query): void
@@ -124,7 +192,8 @@ class DoctorController extends Controller
 
     private function redirectWithQuery(array $params): void
     {
-        $baseUrl = $this->config['base_url'] ?? '/';
+        $requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $baseUrl = is_string($requestPath) && $requestPath !== '' ? $requestPath : ($this->config['base_url'] ?? '/');
         $queryString = http_build_query($params);
         $target = $queryString !== '' ? $baseUrl . '?' . $queryString : $baseUrl;
 

@@ -30,18 +30,19 @@ try {
     $controller = new DoctorController($doctorModel, $config);
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $action = $_POST['action'] ?? '';
+        $action = strtolower(trim((string) ($_POST['action'] ?? '')));
 
         if ($action === 'store') {
             $controller->store();
-        }
-
-        if ($action === 'store_specialty') {
+        } elseif ($action === 'store_specialty') {
             $controller->storeSpecialty();
-        }
-
-        if ($action === 'update') {
+        } elseif ($action === 'update') {
             $controller->update();
+        } elseif ($action === 'delete') {
+            $controller->delete();
+        } else {
+            header('Location: ' . (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '/') . '?error=' . urlencode('Accion de formulario invalida'));
+            exit;
         }
     }
 
