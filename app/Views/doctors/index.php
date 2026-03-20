@@ -78,6 +78,9 @@ if (($status ?? '') === 'created') {
             <span class="result-chip muted-chip">
                 <i class="bi bi-funnel-fill me-1"></i>Ordenados por especialidad
             </span>
+            <a class="result-chip export-chip" href="?format=excel&amp;q=<?= urlencode((string) ($query ?? '')) ?>">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i>Exportar Excel
+            </a>
         </div>
     </div>
 </section>
@@ -311,6 +314,18 @@ if (($status ?? '') === 'created') {
     }
 
     if (floatingFlash) {
+        // Remove one-time flash params so refresh does not show the same message again.
+        const currentUrl = new URL(window.location.href);
+        const hadFlashParam = currentUrl.searchParams.has('status') || currentUrl.searchParams.has('error');
+
+        if (hadFlashParam) {
+            currentUrl.searchParams.delete('status');
+            currentUrl.searchParams.delete('error');
+
+            const nextUrl = currentUrl.pathname + (currentUrl.searchParams.toString() ? `?${currentUrl.searchParams.toString()}` : '') + currentUrl.hash;
+            window.history.replaceState({}, '', nextUrl);
+        }
+
         const dismissFlash = () => {
             floatingFlash.classList.add('hide');
             setTimeout(() => {

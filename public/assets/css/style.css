@@ -96,6 +96,21 @@ body {
     color: #3c5768;
 }
 
+.export-chip {
+    text-decoration: none;
+    background: linear-gradient(120deg, #1e8e3e, #116530);
+    color: #ffffff;
+    font-weight: 700;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.export-chip:hover,
+.export-chip:focus {
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(17, 101, 48, 0.28);
+}
+
 .directory-card {
     box-shadow: 0 15px 35px rgba(23, 52, 68, 0.1);
 }
@@ -121,6 +136,7 @@ body {
 .directory-table th {
     padding: 0.9rem 1rem;
     border-color: #e8eff2;
+    font-size: 1.01rem;
 }
 
 .specialty-group-row td {
@@ -156,7 +172,7 @@ body {
 }
 
 .phone-emphasis {
-    font-size: 1.06rem;
+    font-size: 1.16rem;
     font-weight: 900;
     letter-spacing: 0.02em;
     padding: 0.28rem 0.92rem;
